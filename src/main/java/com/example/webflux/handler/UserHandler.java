@@ -5,14 +5,13 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity.BodyBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.example.webflux.entity.User;
+import com.example.webflux.model.UserRequestModel;
 import com.example.webflux.repo.UserRepository;
 
 import reactor.core.publisher.Mono;
@@ -24,19 +23,32 @@ public class UserHandler {
     private UserRepository repo;
     
     public Mono<ServerResponse> saveUser(ServerRequest request) {
-        Mono<User> monoRequest = request
-                .body(BodyExtractors.toMono(User.class));
+        Mono<UserRequestModel> monoRequest = request
+                .bodyToMono(UserRequestModel.class);
         final String id = UUID.randomUUID().toString();
-
-        final User user = new User("Srishti", "Singh", id);
-
-        Mono<User> monoUser = repo.save(user);
-
         URI location = UriComponentsBuilder.fromPath("user/" + id).build()
                 .toUri();
-        return ServerResponse.created(location)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(monoUser, User.class);
+        return monoRequest
+                .flatMap(userReq -> ServerResponse.created(location)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(addToDB(id, userReq),
+                                        User.class));
+    }
+
+    public Mono<ServerResponse> getUser(ServerRequest request) {
+        final String id = request.pathVariable("id");
+        Mono<User> user = getFromDB(id);
+        return user.flatMap(u -> ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON).body(user, User.class))
+                .switchIfEmpty(ServerResponse.notFound().build());
+    }
+    
+    private Mono<User> addToDB(final String id, UserRequestModel userReq) {
+        return repo.save(new User(userReq, id));
+    }
+    
+    private Mono<User> getFromDB(final String id) {
+        return repo.findById(id);
     }
     
 

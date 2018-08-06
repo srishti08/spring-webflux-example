@@ -4,12 +4,14 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+        maven {
+            url 'https://repo.spring.io/libs-snapshot'
+        }
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         classpath "io.spring.gradle:dependency-management-plugin:0.6.0.RELEASE"
-        // if using Stub Runner (consumer side) only remove this dependency
-        classpath "org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.0.2.BUILD-SNAPSHOT"
+        classpath "org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.0.0.RELEASE"
 	}
 }
 
@@ -19,7 +21,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'spring-cloud-contract'
 
-group = 'com.spring.webflux.example'
+group = 'com.example.webflux'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 
@@ -33,20 +35,19 @@ repositories {
 
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-couchbase-reactive')
-    //compile ('org.springframework.data:spring-data-couchbase:3.0.9.RELEASE')
 	compile('org.springframework.boot:spring-boot-starter-webflux')
-    testCompile 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
+    testCompile 'org.springframework.cloud:spring-cloud-starter-contract-verifier:2.0.0.RELEASE'
     testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile('io.projectreactor:reactor-test')
 }
 
 dependencyManagement {
     imports {
-         mavenBom 'org.springframework.cloud:spring-cloud-contract-dependencies:2.0.2.BUILD-SNAPSHOT'
+         mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Finchley.SR1'
     }
 }
 
 contracts {
-    baseClassForTests = 'com.example.webflux.contracts'
-    // fully qualified name to a class that will be the base class for your generated test classes
+    testMode = 'Explicit'
+    packageWithBaseClasses = 'com.example.webflux.springcontracts'
 }
